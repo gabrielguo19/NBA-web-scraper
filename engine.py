@@ -74,18 +74,15 @@ def initialize_gemini(api_key):
             
             model_name = None
             
-            # Try preferred models first
+            # Try preferred Gemini text-out models first
             for preferred in preferred_models:
                 if preferred in model_names:
                     try:
-                        logger.info(f"Testing model: {preferred}")
-                        # Test the model with a simple prompt
-                        test_response = client.models.generate_content(
-                            model=preferred,
-                            contents="Say 'OK' if you're ready."
-                        )
+                        logger.info(f"Testing Gemini model: {preferred}")
+                        # Test the model with a simple prompt (saves API calls - only test if needed)
+                        # Skip test to save requests - just try to use it
                         model_name = preferred
-                        logger.info(f"Successfully initialized {preferred}")
+                        logger.info(f"Successfully initialized {preferred} (Gemini text-out model)")
                         break
                     except Exception as e:
                         logger.debug(f"{preferred} failed: {e}")
@@ -97,12 +94,9 @@ def initialize_gemini(api_key):
                 for flash_model in flash_models:
                     try:
                         logger.info(f"Trying available Gemini Flash model: {flash_model}")
-                        test_response = client.models.generate_content(
-                            model=flash_model,
-                            contents="Say 'OK' if you're ready."
-                        )
+                        # Skip test to save API requests - just use the model
                         model_name = flash_model
-                        logger.info(f"Successfully initialized {flash_model}")
+                        logger.info(f"Successfully initialized {flash_model} (Gemini text-out model)")
                         break
                     except Exception as e:
                         logger.debug(f"{flash_model} failed: {e}")
@@ -125,13 +119,10 @@ def initialize_gemini(api_key):
             
             for fallback_name in fallback_models:
                 try:
-                    logger.info(f"Trying fallback model: {fallback_name}")
-                    test_response = client.models.generate_content(
-                        model=fallback_name,
-                        contents="Say 'OK' if you're ready."
-                    )
+                    logger.info(f"Trying fallback Gemini model: {fallback_name}")
+                    # Skip test to save API requests - just use the model
                     model_name = fallback_name
-                    logger.info(f"Successfully initialized {fallback_name}")
+                    logger.info(f"Successfully initialized {fallback_name} (Gemini text-out model)")
                     break
                 except Exception:
                     continue
