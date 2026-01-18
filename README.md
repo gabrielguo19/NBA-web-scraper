@@ -12,6 +12,18 @@ A Python-based system that scrapes ESPN NBA headlines, analyzes sentiment using 
 - **Executive Briefings**: Generates 3-paragraph briefings focusing on injuries and high-stakes storylines
 - **Professional Email**: Sends dark-themed HTML emails with color-coded sentiment indicators
 
+## 🚀 Quick Setup Guide
+
+**Follow these steps to get started in 5 minutes:**
+
+1. **Install Python dependencies** → See Step 1 below
+2. **Get your Gemini API key** → Go to [Google AI Studio](https://aistudio.google.com/app/apikey) (Step 2)
+3. **Set up Gmail App Password** → See Step 3 below
+4. **Create `.env` file** → See Step 4 below
+5. **Run the script** → `python main.py`
+
+---
+
 ## Setup
 
 ### Prerequisites
@@ -21,7 +33,7 @@ A Python-based system that scrapes ESPN NBA headlines, analyzes sentiment using 
 - Gmail account with 2-Factor Authentication (2FA) enabled
 - Google Gemini API key (free tier available)
 
-### 1. Install Dependencies
+### Step 1: Install Dependencies
 
 First, make sure you have Python installed. Then install all required packages:
 
@@ -38,22 +50,25 @@ This will install:
 - `nba_api` - For NBA scoreboard data
 - `python-dotenv` - For environment variable management
 
-### 2. Get Your API Keys
+### Step 2: Get Your Gemini API Key
 
-#### Gemini API Key
+**📍 Go to Google AI Studio to get your API key:**
 
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+1. **Visit [Google AI Studio](https://aistudio.google.com/app/apikey)** (or go to [aistudio.google.com](https://aistudio.google.com) and click "Get API Key")
 2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy your API key (you'll need this for the .env file)
+3. Click **"Create API Key"** or **"Get API Key"**
+4. Copy your API key (starts with `AIza...`)
+5. **Save it** - you'll need it for the `.env` file in Step 4
 
-**Note**: 
+**Important Notes:**
+- The API key is **free** for the tier we're using
+- Keep your API key **secret** - don't share it publicly
 - The script automatically selects the best available Gemini text-out model
 - **gemini-2.5-flash-lite**: 10 requests per minute (RPM) and 20 requests per day (RPD) - **Currently in use**
 - Other Gemini Flash models: 5 RPM and 20 RPD
 - Only text-out models are used (required for text generation)
 
-#### Gmail App Password
+### Step 3: Set Up Gmail App Password
 
 1. Enable 2-Factor Authentication (2FA) on your Gmail account:
    - Go to [Google Account Settings](https://myaccount.google.com/)
@@ -69,13 +84,14 @@ This will install:
 
 **Important**: Use the App Password, NOT your regular Gmail password.
 
-### 3. Configure Environment Variables
+### Step 4: Configure Environment Variables
 
 Create a `.env` file in the project root directory with the following content:
 
 ```env
 # Google Gemini API Configuration
-# Get your API key from: https://makersuite.google.com/app/apikey
+# Get your API key from: https://aistudio.google.com/app/apikey
+# Or visit: https://aistudio.google.com and click "Get API Key"
 GEMINI_API_KEY=your_gemini_api_key_here
 
 # Gmail Configuration (requires 2FA and App Password)
@@ -89,10 +105,28 @@ GMAIL_APP_PASSWORD=your_16_character_app_password_here
 EMAIL_RECIPIENT=recipient@example.com
 ```
 
+**Sample `.env` file** (what it should look like with real values):
+
+```env
+# Google Gemini API Configuration
+GEMINI_API_KEY=AIzaSyB1234567890abcdefghijklmnopqrstuvwxyz
+
+# Gmail Configuration
+GMAIL_EMAIL=john.doe@gmail.com
+GMAIL_APP_PASSWORD=abcd efgh ijkl mnop
+
+# Email Recipient
+EMAIL_RECIPIENT=john.doe@gmail.com
+```
+
 **Important Notes**:
 - Replace all placeholder values with your actual credentials
 - The `.env` file should be in the same directory as `main.py`
 - Never commit the `.env` file to version control (it's already in `.gitignore`)
+- Make sure there are **no spaces** around the `=` sign
+- Don't use quotes around the values (e.g., use `AIza...` not `"AIza..."`)
+- The Gmail App Password may have spaces (like `abcd efgh ijkl mnop`) - that's fine, keep them as-is
+- Your `EMAIL_RECIPIENT` can be the same as `GMAIL_EMAIL` if you want to send to yourself
 
 ## Usage
 
@@ -209,7 +243,7 @@ The script is configured to:
 
 - **Python**: 3.8 or higher
 - **Internet Connection**: Required for scraping and API calls
-- **Valid Gemini API Key**: Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
+- **Valid Gemini API Key**: Get from [Google AI Studio](https://aistudio.google.com/app/apikey) or visit [aistudio.google.com](https://aistudio.google.com)
 - **Gmail Account**: With 2FA enabled
 - **Gmail App Password**: 16-character password (not regular password)
 
