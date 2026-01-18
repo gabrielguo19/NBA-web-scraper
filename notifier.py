@@ -14,10 +14,29 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import pandas as pd
 import logging
+import re
 
 # Configure logging for this module
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def markdown_to_html(text):
+    """
+    Convert basic markdown formatting to HTML.
+    
+    Currently supports:
+    - **text** -> <strong>text</strong> (bold)
+    
+    Args:
+        text (str): Text with markdown formatting
+        
+    Returns:
+        str: Text with HTML formatting
+    """
+    # Convert markdown bold (**text**) to HTML bold
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+    return text
 
 
 def create_html_email(briefing, news_df, scoreboard_df):
@@ -43,11 +62,21 @@ def create_html_email(briefing, news_df, scoreboard_df):
         - Includes both HTML and plain text versions
     """
     # Format briefing paragraphs with proper HTML paragraph tags
+    # Convert markdown formatting (like **bold**) to HTML
     briefing_paragraphs = briefing.split('\n\n')
     briefing_html = ""
     for para in briefing_paragraphs:
         if para.strip():
-            briefing_html += f"<p style='margin: 0 0 15px 0; line-height: 1.6;'>{para.strip()}</p>\n"
+            # Convert markdown to HTML (e.g., **text** -> <strong>text</strong>)
+            para_html = markdown_to_html(para.strip())
+            # Escape HTML special characters, but preserve our <strong> tags
+            # First, temporarily replace our HTML tags with placeholders
+            para_html = para_html.replace('<strong>', '___STRONG_OPEN___').replace('</strong>', '___STRONG_CLOSE___')
+            # Escape HTML special characters
+            para_html = para_html.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            # Restore our <strong> tags
+            para_html = para_html.replace('___STRONG_OPEN___', '<strong>').replace('___STRONG_CLOSE___', '</strong>')
+            briefing_html += f"<p style='margin: 0 0 15px 0; line-height: 1.6;'>{para_html}</p>\n"
     
     # Create headlines table with color-coded sentiment
     headlines_html = ""
