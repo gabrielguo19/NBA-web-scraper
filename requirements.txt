@@ -1,7 +1,18 @@
+# Google Gemini AI - For Gemini 2.5 Flash model integration
 google-generativeai>=0.3.0
+
+# Data manipulation and analysis
 pandas>=2.0.0
+
+# HTTP requests for web scraping
 requests>=2.31.0
+
+# HTML parsing for web scraping
 beautifulsoup4>=4.12.0
-nba_api>=1.2.1
-python-dotenv>=1.0.0
 lxml>=4.9.0
+
+# NBA API for scoreboard data
+nba_api>=1.2.1
+
+# Environment variable management
+python-dotenv>=1.0.0

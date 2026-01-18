@@ -2,12 +2,20 @@
 NBA Intelligence Dispatcher - Main Entry Point
 
 Orchestrates the complete workflow:
-1. Scrape ESPN headlines and NBA scoreboard
-2. Analyze sentiment using Gemini 2.5 Flash
-3. Generate executive briefing
-4. Send HTML email with results
+1. Scrape ESPN headlines and full article content
+2. Fetch today's NBA scoreboard
+3. Analyze sentiment and generate summaries using Gemma 3 model
+4. Generate executive briefing using Gemma 3 model
+5. Send HTML email with results
 
 All sensitive data (API keys, email credentials) is loaded from .env file.
+
+Usage:
+    python main.py
+
+Exit Codes:
+    0: Success
+    1: Failure (error logged)
 """
 
 import os
@@ -31,11 +39,21 @@ logger = logging.getLogger(__name__)
 
 def validate_environment():
     """
-    Validate that all required environment variables are present.
+    Validate that all required environment variables are present and valid.
+    
+    Checks for:
+    - GEMINI_API_KEY: Google Gemini API key
+    - GMAIL_EMAIL: Gmail sender email address
+    - GMAIL_APP_PASSWORD: Gmail App Password (16-character password)
+    - EMAIL_RECIPIENT: Recipient email address
     
     Returns:
         tuple: (gemini_key, gmail_email, gmail_password, recipient_email) if valid
-        None: If validation fails
+        None: If validation fails (error logged)
+        
+    Note:
+        - Validates that values are not empty or placeholder text
+        - Checks that Gmail email contains '@' symbol
     """
     required_vars = {
         'GEMINI_API_KEY': os.getenv('GEMINI_API_KEY'),
@@ -44,6 +62,7 @@ def validate_environment():
         'EMAIL_RECIPIENT': os.getenv('EMAIL_RECIPIENT')
     }
     
+    # Check for missing variables
     missing_vars = [var for var, value in required_vars.items() if not value or value.strip() == ""]
     
     if missing_vars:
@@ -51,7 +70,7 @@ def validate_environment():
         logger.error("Please check your .env file and ensure all variables are set")
         return None
     
-    # Check for placeholder values
+    # Check for placeholder values (common mistake)
     if 'your_' in required_vars['GEMINI_API_KEY'].lower():
         logger.error("GEMINI_API_KEY appears to be a placeholder. Please set your actual API key in .env")
         return None
@@ -73,17 +92,22 @@ def main():
     """
     Main execution function that orchestrates the complete workflow.
     
-    Workflow:
-    1. Load environment variables
-    2. Initialize Gemini model
-    3. Scrape ESPN headlines
-    4. Fetch today's scoreboard
-    5. Analyze sentiment
-    6. Generate executive briefing
-    7. Send email
+    Workflow Steps:
+    1. Load and validate environment variables from .env
+    2. Initialize Gemini 2.5 Flash model
+    3. Scrape ESPN headlines (5 headlines with full article content)
+    4. Fetch today's NBA scoreboard
+    5. Analyze sentiment and generate 5-sentence summaries using Gemini 2.5 Flash
+    6. Generate 3-paragraph executive briefing using Gemini 2.5 Flash
+    7. Send HTML email with all results
     
     Returns:
         int: 0 on success, 1 on failure
+        
+    Note:
+        - All steps include error handling and graceful degradation
+        - Script continues even if individual steps fail (with warnings)
+        - Logs all operations for debugging
     """
     try:
         print("Starting NBA Intelligence Dispatcher...")
@@ -91,11 +115,11 @@ def main():
         logger.info("NBA Intelligence Dispatcher - Starting")
         logger.info("=" * 60)
         
-        # Load environment variables
+        # Step 1: Load environment variables
         logger.info("Loading environment variables from .env")
         load_dotenv()
         
-        # Validate environment
+        # Step 2: Validate environment
         env_vars = validate_environment()
         if not env_vars:
             logger.error("Environment validation failed. Exiting.")
@@ -103,8 +127,8 @@ def main():
         
         gemini_key, gmail_email, gmail_password, recipient_email = env_vars
         
-        # Initialize Gemini
-        logger.info("Initializing Gemini 2.5 Flash model")
+        # Step 3: Initialize Gemma 3 model (better rate limits: 14.4K RPD)
+        logger.info("Initializing Gemma 3 model")
         try:
             model = initialize_gemini(gemini_key)
         except Exception as e:
@@ -112,10 +136,10 @@ def main():
             logger.error("Please check your GEMINI_API_KEY in .env")
             return 1
         
-        # Scrape ESPN headlines
+        # Step 4: Scrape ESPN headlines (includes full article content)
         logger.info("Step 1: Scraping ESPN headlines")
         try:
-            headlines_df = scrape_espn_headlines(limit=5)
+            headlines_df = scrape_espn_headlines(limit=5)  # Limited to 5 for API rate limits
             if headlines_df.empty:
                 logger.warning("No headlines scraped. Continuing with empty DataFrame.")
             else:
@@ -124,9 +148,9 @@ def main():
             logger.error(f"Error scraping headlines: {e}")
             logger.warning("Continuing with empty headlines DataFrame")
             import pandas as pd
-            headlines_df = pd.DataFrame(columns=['headline', 'description', 'link', 'date', 'team'])
+            headlines_df = pd.DataFrame(columns=['headline', 'description', 'link', 'date', 'team', 'article_content'])
         
-        # Fetch today's scoreboard
+        # Step 5: Fetch today's scoreboard
         logger.info("Step 2: Fetching today's NBA scoreboard")
         try:
             scoreboard_df = get_todays_scoreboard()
@@ -141,12 +165,12 @@ def main():
             scoreboard_df = pd.DataFrame(columns=['home_team', 'away_team', 'home_score', 
                                                   'away_score', 'status', 'game_id', 'game_date'])
         
-        # Analyze sentiment
-        logger.info("Step 3: Analyzing sentiment of headlines")
+        # Step 6: Analyze sentiment and generate summaries using Gemma 3 model
+        logger.info("Step 3: Analyzing sentiment and generating summaries")
         try:
             if not headlines_df.empty:
                 headlines_df = analyze_sentiment(headlines_df, model)
-                logger.info("Sentiment analysis complete")
+                logger.info("Sentiment analysis and summary generation complete")
             else:
                 logger.warning("Skipping sentiment analysis - no headlines available")
         except Exception as e:
@@ -154,8 +178,10 @@ def main():
             logger.warning("Continuing without sentiment scores")
             if 'sentiment' not in headlines_df.columns:
                 headlines_df['sentiment'] = 0.0
+            if 'summary' not in headlines_df.columns:
+                headlines_df['summary'] = ""
         
-        # Generate executive briefing
+        # Step 7: Generate executive briefing using Gemma 3 model
         logger.info("Step 4: Generating executive briefing")
         try:
             briefing = generate_briefing(headlines_df, scoreboard_df, model)
@@ -169,7 +195,7 @@ The most critical games today feature teams dealing with various challenges, fro
 
 Executives should pay close attention to games involving teams with significant injury reports or recent roster changes, as these factors often determine game outcomes more than historical matchups."""
         
-        # Send email
+        # Step 8: Send email
         logger.info("Step 5: Sending email")
         try:
             success = send_email(

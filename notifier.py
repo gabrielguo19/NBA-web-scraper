@@ -2,7 +2,11 @@
 NBA Intelligence Dispatcher - Email Notifier Module
 
 This module handles sending HTML emails with the executive briefing,
-news headlines, and game scoreboard using smtplib and email.mime.
+news headlines with summaries, and game scoreboard using smtplib and email.mime.
+
+Functions:
+    - create_html_email(): Creates dark-themed HTML email template
+    - send_email(): Sends email via Gmail SMTP using App Password authentication
 """
 
 import smtplib
@@ -11,7 +15,7 @@ from email.mime.multipart import MIMEMultipart
 import pandas as pd
 import logging
 
-# Configure logging
+# Configure logging for this module
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -20,15 +24,25 @@ def create_html_email(briefing, news_df, scoreboard_df):
     """
     Create a professional dark-themed HTML email template.
     
+    This function formats the executive briefing, news headlines with summaries,
+    and game scoreboard into a beautiful dark-themed HTML email. The template
+    includes color-coded sentiment indicators (green for positive, red for negative).
+    
     Args:
         briefing (str): Executive briefing text (3 paragraphs)
-        news_df (pd.DataFrame): DataFrame with headlines, descriptions, sentiment
-        scoreboard_df (pd.DataFrame): DataFrame with game matchups and scores
+        news_df (pd.DataFrame): DataFrame with headlines, summaries, and sentiment scores
+        scoreboard_df (pd.DataFrame): DataFrame with game matchups, scores, and status
         
     Returns:
-        str: Complete HTML email content
+        str: Complete HTML email content with inline CSS styling
+        
+    Note:
+        - Dark theme: background #1a1a1a, text #e0e0e0
+        - Sentiment colors: Green (#4CAF50) for positive, Red (#F44336) for negative
+        - Responsive design with max-width 800px
+        - Includes both HTML and plain text versions
     """
-    # Format briefing paragraphs
+    # Format briefing paragraphs with proper HTML paragraph tags
     briefing_paragraphs = briefing.split('\n\n')
     briefing_html = ""
     for para in briefing_paragraphs:
@@ -49,8 +63,10 @@ def create_html_email(briefing, news_df, scoreboard_df):
             </thead>
             <tbody>
 """
+        # Add each headline as a table row
         for _, row in news_df.iterrows():
             sentiment = row.get('sentiment', 0.0)
+            
             # Color code: Green for positive (>= 0), Red for negative (< 0)
             if sentiment >= 0:
                 sentiment_color = '#4CAF50'  # Green
@@ -59,11 +75,15 @@ def create_html_email(briefing, news_df, scoreboard_df):
                 sentiment_color = '#F44336'  # Red
                 sentiment_text = f"{sentiment:.2f}"
             
+            # Escape HTML special characters in headline
             headline = str(row.get('headline', 'N/A')).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-            # Use AI-generated summary (5 sentences)
+            
+            # Use AI-generated summary (5 sentences from Gemini 2.5 Flash)
             summary = str(row.get('summary', ''))
             if not summary or summary == "No summary available" or summary == "":
                 summary = str(row.get('description', 'No description available'))
+            
+            # Escape HTML and limit length
             summary = summary[:500].replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
             if len(summary) > 500:
                 summary += "..."
@@ -97,6 +117,7 @@ def create_html_email(briefing, news_df, scoreboard_df):
             </thead>
             <tbody>
 """
+        # Add each game as a table row
         for _, game in scoreboard_df.iterrows():
             away_team = str(game.get('away_team', 'N/A'))
             home_team = str(game.get('home_team', 'N/A'))
@@ -104,6 +125,7 @@ def create_html_email(briefing, news_df, scoreboard_df):
             home_score = game.get('home_score', 0)
             status = str(game.get('status', 'Scheduled'))
             
+            # Display score if game has started, otherwise show "TBD"
             score_display = f"{away_score} - {home_score}" if (away_score > 0 or home_score > 0) else "TBD"
             
             games_html += f"""
@@ -121,7 +143,7 @@ def create_html_email(briefing, news_df, scoreboard_df):
     else:
         games_html = "<p style='color: #b0b0b0; font-style: italic;'>No games scheduled for today.</p>"
     
-    # Complete HTML template
+    # Complete HTML template with dark theme styling
     html_content = f"""
 <!DOCTYPE html>
 <html>
@@ -132,7 +154,7 @@ def create_html_email(briefing, news_df, scoreboard_df):
 </head>
 <body style="margin: 0; padding: 0; background-color: #1a1a1a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
     <div style="max-width: 800px; margin: 0 auto; padding: 20px; background-color: #1a1a1a;">
-        <!-- Header -->
+        <!-- Header with gradient background -->
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 8px 8px 0 0; margin-bottom: 20px;">
             <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">NBA Intelligence Dispatch</h1>
             <p style="margin: 10px 0 0 0; color: #e0e0e0; font-size: 14px;">Executive Pregame Briefing</p>
@@ -140,7 +162,7 @@ def create_html_email(briefing, news_df, scoreboard_df):
         
         <!-- Main Content -->
         <div style="background-color: #242424; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-            <!-- Executive Briefing -->
+            <!-- Executive Briefing Section -->
             <div style="margin-bottom: 30px;">
                 <h2 style="color: #e0e0e0; font-size: 22px; margin-bottom: 15px; border-bottom: 2px solid #444; padding-bottom: 10px;">Executive Briefing</h2>
                 <div style="color: #e0e0e0; line-height: 1.8;">
@@ -148,13 +170,13 @@ def create_html_email(briefing, news_df, scoreboard_df):
                 </div>
             </div>
             
-            <!-- News Headlines -->
+            <!-- News Headlines Section -->
             <div style="margin-bottom: 30px;">
                 <h2 style="color: #e0e0e0; font-size: 22px; margin-bottom: 15px; border-bottom: 2px solid #444; padding-bottom: 10px;">Top News Headlines</h2>
                 {headlines_html}
             </div>
             
-            <!-- Today's Games -->
+            <!-- Today's Games Section -->
             <div>
                 <h2 style="color: #e0e0e0; font-size: 22px; margin-bottom: 15px; border-bottom: 2px solid #444; padding-bottom: 10px;">Today's Games</h2>
                 {games_html}
@@ -177,18 +199,30 @@ def send_email(briefing, news_df, scoreboard_df, sender_email, app_password, rec
     """
     Send HTML email with executive briefing, news, and scoreboard data.
     
-    Uses Gmail SMTP with App Password authentication.
+    Uses Gmail SMTP with App Password authentication (requires 2FA enabled).
+    Sends both HTML and plain text versions for maximum compatibility.
     
     Args:
-        briefing (str): Executive briefing text
-        news_df (pd.DataFrame): DataFrame with headlines and sentiment
-        scoreboard_df (pd.DataFrame): DataFrame with game matchups
+        briefing (str): Executive briefing text (3 paragraphs)
+        news_df (pd.DataFrame): DataFrame with headlines, summaries, and sentiment scores
+        scoreboard_df (pd.DataFrame): DataFrame with game matchups, scores, and status
         sender_email (str): Gmail sender email address
-        app_password (str): Gmail App Password (requires 2FA)
+        app_password (str): Gmail App Password (16-character password, not regular password)
         recipient_email (str): Recipient email address
         
     Returns:
         bool: True if email sent successfully, False otherwise
+        
+    Raises:
+        ValueError: If email credentials are missing
+        smtplib.SMTPAuthenticationError: If Gmail authentication fails
+        smtplib.SMTPException: If SMTP error occurs
+        
+    Note:
+        - Requires Gmail account with 2FA enabled
+        - Uses App Password (not regular Gmail password)
+        - Sends via smtp.gmail.com on port 587 with TLS
+        - Includes both HTML and plain text versions
     """
     try:
         logger.info(f"Preparing email to {recipient_email}")
@@ -200,13 +234,13 @@ def send_email(briefing, news_df, scoreboard_df, sender_email, app_password, rec
         # Create HTML content
         html_content = create_html_email(briefing, news_df, scoreboard_df)
         
-        # Create message
+        # Create multipart message (supports both HTML and plain text)
         msg = MIMEMultipart('alternative')
         msg['Subject'] = "NBA Executive Pregame Briefing"
         msg['From'] = sender_email
         msg['To'] = recipient_email
         
-        # Create plain text version as fallback
+        # Create plain text version as fallback for email clients that don't support HTML
         text_content = f"""
 NBA Executive Pregame Briefing
 
@@ -227,7 +261,7 @@ Top News Headlines:
         else:
             text_content += "\nNo games scheduled for today.\n"
         
-        # Attach both plain text and HTML
+        # Attach both plain text and HTML versions
         part1 = MIMEText(text_content, 'plain')
         part2 = MIMEText(html_content, 'html')
         
@@ -237,7 +271,7 @@ Top News Headlines:
         # Send email via Gmail SMTP
         logger.info("Connecting to Gmail SMTP server")
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
+            server.starttls()  # Enable TLS encryption
             server.login(sender_email, app_password)
             server.send_message(msg)
         
