@@ -1,5 +1,5 @@
-# Google Gemini AI - For Gemini 2.5 Flash model integration
-google-generativeai>=0.3.0
+# Google GenAI SDK - For AI model integration (new SDK)
+google-genai>=0.2.0
 
 # Data manipulation and analysis
 pandas>=2.0.0

@@ -4,8 +4,8 @@ NBA Intelligence Dispatcher - Main Entry Point
 Orchestrates the complete workflow:
 1. Scrape ESPN headlines and full article content
 2. Fetch today's NBA scoreboard
-3. Analyze sentiment and generate summaries using Gemma 3 model
-4. Generate executive briefing using Gemma 3 model
+3. Analyze sentiment and generate summaries using Gemini text-out model
+4. Generate executive briefing using Gemini text-out model
 5. Send HTML email with results
 
 All sensitive data (API keys, email credentials) is loaded from .env file.
@@ -127,12 +127,13 @@ def main():
         
         gemini_key, gmail_email, gmail_password, recipient_email = env_vars
         
-        # Step 3: Initialize Gemma 3 model (better rate limits: 14.4K RPD)
-        logger.info("Initializing Gemma 3 model")
+        # Step 3: Initialize Gemini text-out model (automatically selects best available)
+        logger.info("Initializing Gemini text-out model")
         try:
-            model = initialize_gemini(gemini_key)
+            client, model_name = initialize_gemini(gemini_key)
+            logger.info(f"Using model: {model_name}")
         except Exception as e:
-            logger.error(f"Failed to initialize Gemini: {e}")
+            logger.error(f"Failed to initialize AI client: {e}")
             logger.error("Please check your GEMINI_API_KEY in .env")
             return 1
         
@@ -165,11 +166,11 @@ def main():
             scoreboard_df = pd.DataFrame(columns=['home_team', 'away_team', 'home_score', 
                                                   'away_score', 'status', 'game_id', 'game_date'])
         
-        # Step 6: Analyze sentiment and generate summaries using Gemma 3 model
+        # Step 6: Analyze sentiment and generate summaries using Gemini model
         logger.info("Step 3: Analyzing sentiment and generating summaries")
         try:
             if not headlines_df.empty:
-                headlines_df = analyze_sentiment(headlines_df, model)
+                headlines_df = analyze_sentiment(headlines_df, client, model_name)
                 logger.info("Sentiment analysis and summary generation complete")
             else:
                 logger.warning("Skipping sentiment analysis - no headlines available")
@@ -181,10 +182,10 @@ def main():
             if 'summary' not in headlines_df.columns:
                 headlines_df['summary'] = ""
         
-        # Step 7: Generate executive briefing using Gemma 3 model
+        # Step 7: Generate executive briefing using Gemini model
         logger.info("Step 4: Generating executive briefing")
         try:
-            briefing = generate_briefing(headlines_df, scoreboard_df, model)
+            briefing = generate_briefing(headlines_df, scoreboard_df, client, model_name)
             logger.info("Executive briefing generated successfully")
         except Exception as e:
             logger.error(f"Error generating briefing: {e}")

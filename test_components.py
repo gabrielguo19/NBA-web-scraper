@@ -47,9 +47,9 @@ def test_scoreboard():
         return False
 
 def test_gemini():
-    """Test Gemini initialization."""
+    """Test AI model initialization."""
     print("\n" + "="*60)
-    print("Testing Gemini 2.5 Flash Initialization")
+    print("Testing AI Model Initialization (Google GenAI SDK)")
     print("="*60)
     try:
         api_key = os.getenv('GEMINI_API_KEY')
@@ -57,12 +57,15 @@ def test_gemini():
             print("✗ GEMINI_API_KEY not found in .env")
             return False
         
-        model = initialize_gemini(api_key)
-        print("✓ Gemini model initialized successfully")
+        client, model_name = initialize_gemini(api_key)
+        print(f"✓ AI model initialized successfully: {model_name}")
         
         # Test a simple prompt
         print("  Testing with a simple prompt...")
-        response = model.generate_content("Say 'OK' if you're working.")
+        response = client.models.generate_content(
+            model=model_name,
+            contents="Say 'OK' if you're working."
+        )
         print(f"  Response: {response.text}")
         return True
     except Exception as e:

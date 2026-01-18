@@ -1,12 +1,14 @@
 # NBA Intelligence Dispatcher
 
-A Python-based system that scrapes ESPN NBA headlines, analyzes sentiment using **Gemma 3 model** (with better rate limits), and generates executive pregame briefings delivered via email.
+A Python-based system that scrapes ESPN NBA headlines, analyzes sentiment using **Gemini text-out models** via Google GenAI SDK (automatically selects best available), and generates executive pregame briefings delivered via email.
+
+**Note**: Uses the new `google-genai` package (not the deprecated `google-generativeai`). Only uses Gemini text-out models.
 
 ## Features
 
 - **Web Scraping**: Scrapes top 5 NBA headlines and full article content from ESPN
 - **Scoreboard Integration**: Fetches today's NBA games using nba_api
-- **AI-Powered Analysis**: Uses **Gemma 3 model** for sentiment analysis (-1.0 to 1.0) and 5-sentence summaries (14.4K RPD vs 20 RPD)
+- **AI-Powered Analysis**: Uses **Gemini text-out models** (currently gemini-2.5-flash-lite) for sentiment analysis (-1.0 to 1.0) and 5-sentence summaries
 - **Executive Briefings**: Generates 3-paragraph briefings focusing on injuries and high-stakes storylines
 - **Professional Email**: Sends dark-themed HTML emails with color-coded sentiment indicators
 
@@ -28,7 +30,7 @@ pip install -r requirements.txt
 ```
 
 This will install:
-- `google-generativeai` - For Gemini 2.5 Flash AI integration
+- `google-genai` - For Google GenAI SDK (new SDK, replaces google-generativeai)
 - `pandas` - For data manipulation
 - `requests` - For HTTP requests
 - `beautifulsoup4` - For HTML parsing
@@ -46,8 +48,10 @@ This will install:
 4. Copy your API key (you'll need this for the .env file)
 
 **Note**: 
-- **Gemma 3 models**: 30 requests per minute (RPM) and 14,400 requests per day (RPD) - **RECOMMENDED**
-- Gemini 2.5 Flash: 5 requests per minute (RPM) and 20 requests per day (RPD) - limited
+- The script automatically selects the best available Gemini text-out model
+- **gemini-2.5-flash-lite**: 10 requests per minute (RPM) and 20 requests per day (RPD) - **Currently in use**
+- Other Gemini Flash models: 5 RPM and 20 RPD
+- Only text-out models are used (required for text generation)
 
 #### Gmail App Password
 
@@ -184,20 +188,22 @@ The email includes:
 
 ## Rate Limits
 
-**Gemma 3 Models (Primary - Recommended)**:
-- 30 requests per minute (RPM)
-- 14,400 requests per day (RPD) - **Much better than Gemini's 20 RPD!**
+**Current Model: gemini-2.5-flash-lite** (automatically selected):
+- 10 requests per minute (RPM)
+- 20 requests per day (RPD)
 
-**Gemini 2.5 Flash (Fallback)**:
-- 5 requests per minute (RPM)
-- 20 requests per day (RPD) - Very limited
+**Other Available Gemini Text-Out Models**:
+- gemini-3-flash: 5 RPM, 20 RPD
+- gemini-2.5-flash: 5 RPM, 20 RPD
 
 The script is configured to:
-- Use Gemma 3-12B as primary model (14.4K RPD limit)
+- Automatically detect and use the best available Gemini text-out model
 - Scrape 5 headlines
-- Make 5 sentiment/summary requests (can be done immediately)
+- Make 5 sentiment/summary requests (can be done immediately with 10 RPM limit)
 - Make 1 briefing request
-- **Total**: 6 API calls per run (well within Gemma's 14.4K daily limit)
+- **Total**: 6 API calls per run (within 20 RPD daily limit)
+
+**Note**: The script will automatically try to use Gemini models with better rate limits if available. Only text-out models are used.
 
 ## Requirements
 
@@ -219,10 +225,9 @@ pip install -r requirements.txt
 ### API Errors
 
 - **"API key invalid"**: Check your `GEMINI_API_KEY` in `.env`
-- **"Quota exceeded"**: 
-  - If using Gemma 3: You've hit the daily limit (14,400 requests) - very unlikely
-  - If using Gemini: You've hit the daily limit (20 requests). The script will try Gemma models as fallback.
-- **"Model not found"**: Gemma 3 may be temporarily unavailable. The script will try fallback models (other Gemma variants or Gemini models).
+- **"Quota exceeded"**: You've hit the daily limit (20 requests). Wait 24 hours or the script will automatically try other available models.
+- **"Model not found"**: The preferred model may be temporarily unavailable. The script will automatically try fallback models.
+- **Import errors with google-genai**: Make sure you've installed the new package: `pip install -U -q "google-genai"`
 
 ### Email Errors
 
