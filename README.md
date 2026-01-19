@@ -295,3 +295,8 @@ For issues or questions:
 2. Verify all environment variables are set correctly
 3. Run `python test_components.py` to test individual components
 4. Check the logs for detailed error messages
+
+
+## Sample output
+
+<img width="346" height="737" alt="image" src="https://github.com/user-attachments/assets/16ccbc98-ee1a-4587-b7bc-5ff005ad06e2" />
