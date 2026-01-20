@@ -1,8 +1,7 @@
 # NBA Intelligence Dispatcher
 
-A Python-based system that scrapes ESPN NBA headlines, analyzes sentiment using **Gemini text-out models** via Google GenAI SDK (automatically selects best available), and generates executive pregame briefings delivered via email.
+A Python-based system that scrapes ESPN NBA headlines, analyzes sentiment using **Gemini text-out models** via Google GenAI SDK (automatically selects best available), and generates executive pregame briefings and summaries delivered via email.
 
-**Note**: Uses the new `google-genai` package (not the deprecated `google-generativeai`). Only uses Gemini text-out models.
 
 ## Features
 
